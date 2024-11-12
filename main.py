@@ -1,5 +1,5 @@
 from pywebio import start_server, config
-from pywebio.input import input_group, radio, checkbox
+from pywebio.input import input_group, input, TEXT
 
 
 def get_visitees() -> list[str]:
@@ -15,10 +15,15 @@ def main():
     visit = input_group(
         "New visit",
         [
-            # Radio - there can be only one visitor per visit
-            radio("Visitor", get_visitors(), name="visitor", required=True),
-            # Checkbox - there can be multiple visitees per visit
-            checkbox("Visitee", get_visitees(), name="visitee"),
+            input(
+                "Visitor",
+                type=TEXT,
+                datalist=get_visitors(),
+                name="visitor",
+                required=True,
+            ),
+            # Not required - a generic visit can occur, to no one in particular.
+            input("Visitee", type=TEXT, datalist=get_visitees(), name="visitee"),
         ],
     )
     print(f"{visit=}")
