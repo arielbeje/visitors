@@ -5,6 +5,7 @@ from datetime import datetime
 
 from pywebio import start_server, config
 from pywebio.input import input_group, input, TEXT
+from pywebio.output import put_markdown, put_scope, put_table
 
 
 @dataclass
@@ -12,6 +13,15 @@ class Visit:
     visitor: str
     visitee: str | None
     time: datetime
+
+    def to_table_row(self) -> dict[str, str]:
+        return {
+            "Visitor": self.visitor,
+            "Visitee": self.visitee
+            if self.visitee is not None
+            else "<No one in particular>",
+            "Time": self.time.isoformat(),
+        }
 
 
 def get_visitees(db_conn: sqlite3.Connection) -> list[str]:
@@ -30,11 +40,30 @@ def get_visitors(db_conn: sqlite3.Connection) -> list[str]:
     return [row[0] for row in visitor_rows]
 
 
+def get_visits(db_conn: sqlite3.Connection) -> list[Visit]:
+    with db_conn as db_transaction:
+        visit_rows = db_transaction.execute("SELECT * FROM visits")
+    visits = [
+        Visit(row[0], row[1], datetime.fromisoformat(row[2])) for row in visit_rows
+    ]
+    visits.sort(key=lambda visit: visit.time, reverse=True)
+    return visits
+
+
 @config(title="Visitors")
 def main():
     with closing(sqlite3.connect("visits.db")) as db_conn:
         previous_visitors = get_visitors(db_conn)
         previous_visitees = get_visitees(db_conn)
+        previous_visits = get_visits(db_conn)
+
+    put_scope(
+        "previous_visits",
+        [
+            put_markdown("# Previous Visits"),
+            put_table(list(map(Visit.to_table_row, previous_visits))),
+        ],
+    )
 
     visit_input = input_group(
         "New visit",
