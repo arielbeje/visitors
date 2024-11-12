@@ -1,5 +1,15 @@
+from dataclasses import dataclass
+from datetime import datetime
+
 from pywebio import start_server, config
 from pywebio.input import input_group, input, TEXT
+
+
+@dataclass
+class Visit:
+    visitor: str
+    visitee: str | None
+    time: datetime
 
 
 def get_visitees() -> list[str]:
@@ -12,7 +22,7 @@ def get_visitors() -> list[str]:
 
 @config(title="Visitors")
 def main():
-    visit = input_group(
+    visit_input = input_group(
         "New visit",
         [
             input(
@@ -26,6 +36,8 @@ def main():
             input("Visitee", type=TEXT, datalist=get_visitees(), name="visitee"),
         ],
     )
+    visitee = visit_input["visitee"] if len(visit_input["visitee"]) != 0 else None
+    visit = Visit(visit_input["visitor"], visitee, datetime.now())
     print(f"{visit=}")
 
 
