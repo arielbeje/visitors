@@ -1,11 +1,12 @@
 import sqlite3
+from collections import Counter
 from contextlib import closing
 from dataclasses import dataclass
 from datetime import datetime
 
 from pywebio import start_server, config
 from pywebio.input import input_group, input, TEXT
-from pywebio.output import put_markdown, put_scope, put_table
+from pywebio.output import put_markdown, put_row, put_scope, put_table
 
 
 @dataclass
@@ -63,6 +64,37 @@ def main():
             put_markdown("# Previous Visits"),
             put_table(list(map(Visit.to_table_row, previous_visits))),
         ],
+    )
+
+    top_visitors = []
+    for visitor, visit_count in Counter(
+        visit.visitor for visit in previous_visits
+    ).items():
+        top_visitors.append({"Visitor": visitor, "Visit Count": visit_count})
+    top_visitors.sort(key=lambda visitor: visitor["Visit Count"], reverse=True)
+
+    top_visitees = []
+    for visitee, visit_count in Counter(
+        visit.visitee for visit in previous_visits
+    ).items():
+        top_visitees.append({"Visitee": visitor, "Visit Count": visit_count})
+    top_visitees.sort(key=lambda visitee: visitee["Visit Count"], reverse=True)
+
+    put_row(
+        [
+            put_scope(
+                "visitor_leaderboard",
+                [put_markdown("# Top Visitors"), put_table(top_visitors)],
+            ),
+            None,
+            put_scope(
+                "visitee_leaderboard",
+                [
+                    put_markdown("# Top Visitees"),
+                    put_table(top_visitees),
+                ],
+            ),
+        ]
     )
 
     visit_input = input_group(
